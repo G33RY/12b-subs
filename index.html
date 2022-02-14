@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js"></script>
+    <script>
+        const SID = "1RQ3RjnF05ggmcVLI2ynA4N5IM-dAi3ZM6Q-uY7qpvtc";
+        const API_KEY = "AIzaSyAff8g_d8-wQ9hNo8QxRw0Tz_fLz3vfrTU";
+        const RANGE = "A:I";
+
+        const CLASS = "12.c";
+
+        axios({
+            "method": 'get',
+            'url': `https://sheets.googleapis.com/v4/spreadsheets/${SID}/values/${encodeURIComponent(RANGE)}?key=${API_KEY}`,
+        }).then((resp) => {
+            const data = resp.data;
+            if(!data) return console.error(resp);
+            const values = data.values;
+            if(!values) return console.error(data);
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0,0,0,0);
+
+            let replacements = values.filter(e => {
+                let date = Date.parse(e[0]);
+                if(tomorrow.getTime() - date < 86400000 && e[3] == CLASS) {
+                    return true;
+                }
+            }).map(e => {
+                return {
+                    "date": new Date(Date.parse(e[0])),
+                    "lession_number": parseInt(e[1]) ?? -1,
+                    "interval": e[2],
+                    "class": e[3],
+                    "classroom": e[4],
+                    "lession_name": e[5],
+                    "replaced_teacher": e[6],
+                    "replacement_type": e[7],
+                    "replacement_teacher": e[8],
+                }
+            })
+
+            console.log(replacements);
+        })
+    </script>
+</body>
+</html>
