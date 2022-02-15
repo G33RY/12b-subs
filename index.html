@@ -4,50 +4,96 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Helyettesítések</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 </head>
-<body>
+<body class="bg-dark container">
+    <table class="table" id="12b">
+        <h1 class="text-white text-nowrap my-3">Neumann 12.b helyettesítések</h1>
+        <thead>
+            <th class="text-white text-nowrap">Dátum</th>
+            <th class="text-white text-nowrap">Óraszám</th>
+            <th class="text-white text-nowrap">Idő</th>
+            <th class="text-white text-nowrap">Terem</th>
+            <th class="text-white text-nowrap">Óra neve</th>
+            <th class="text-white text-nowrap">Hiányzó tanár</th>
+            <th class="text-white text-nowrap">Helyettesítés tipusa</th>
+            <th class="text-white text-nowrap">Helyettesítő tanár</th>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <script>
-        const SID = "1RQ3RjnF05ggmcVLI2ynA4N5IM-dAi3ZM6Q-uY7qpvtc";
-        const API_KEY = "AIzaSyAff8g_d8-wQ9hNo8QxRw0Tz_fLz3vfrTU";
-        const RANGE = "A:I";
+        function pad(n, width=2, z="0") {
+            z = z;
+            n = n + '';
+            return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+        }
+        const getByClass = async (CLASS = "") => {
+            const SID = "1RQ3RjnF05ggmcVLI2ynA4N5IM-dAi3ZM6Q-uY7qpvtc";
+            const API_KEY = "AIzaSyAff8g_d8-wQ9hNo8QxRw0Tz_fLz3vfrTU";
+            const RANGE = "A:I";
 
-        const CLASS = "12.c";
-
-        axios({
-            "method": 'get',
-            'url': `https://sheets.googleapis.com/v4/spreadsheets/${SID}/values/${encodeURIComponent(RANGE)}?key=${API_KEY}`,
-        }).then((resp) => {
-            const data = resp.data;
+            const resp = await axios({
+                "method": 'get',
+                'url': `https://sheets.googleapis.com/v4/spreadsheets/${SID}/values/${encodeURIComponent(RANGE)}?key=${API_KEY}`,
+            });
+            const data = resp?.data;
             if(!data) return console.error(resp);
             const values = data.values;
             if(!values) return console.error(data);
 
             const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setDate(tomorrow.getDate() + 0);
             tomorrow.setHours(0,0,0,0);
+            const tmrwString = `${tomorrow.getFullYear()}.${pad(tomorrow.getMonth()+1)}.${pad(tomorrow.getDate())}.` 
 
-            let replacements = values.filter(e => {
-                let date = Date.parse(e[0]);
-                if(tomorrow.getTime() - date < 86400000 && e[3] == CLASS) {
-                    return true;
-                }
-            }).map(e => {
+            let replacements = values
+            .filter(e => {
+                if(!e[0]) return false;
+                if(e[0] == tmrwString && e[3] == CLASS) return true;
+            })
+            .map(e => {
                 return {
-                    "date": new Date(Date.parse(e[0])),
+                    "date": e[0],
                     "lession_number": parseInt(e[1]) ?? -1,
                     "interval": e[2],
                     "class": e[3],
-                    "classroom": e[4],
+                    "classroom": e[4] == "" ? "-" : e[4],
                     "lession_name": e[5],
                     "replaced_teacher": e[6],
                     "replacement_type": e[7],
                     "replacement_teacher": e[8],
                 }
             })
+            console.log({
+                classname: CLASS,
+                resp: replacements,
+            });
+            return replacements;
+        }
+    </script>
 
-            console.log(replacements);
+    <script>
+        getByClass("12.c").then((subs) => {
+            let html = ``;
+            for (const sub of subs) {
+                html += `<tr>
+                    <td class="text-white text-nowrap">${sub.date}</td>
+                    <td class="text-white text-nowrap">${sub.lession_number}</td>
+                    <td class="text-white text-nowrap">${sub.interval}</td>
+                    <td class="text-white text-nowrap">${sub.classroom}</td>
+                    <td class="text-white text-nowrap">${sub.lession_name}</td>
+                    <td class="text-white text-nowrap">${sub.replaced_teacher}</td>
+                    <td class="text-white text-nowrap">${sub.replacement_type}</td>
+                    <td class="text-white text-nowrap">${sub.replacement_teacher}</td>
+                </tr>`;
+            }
+            $("#12b tbody").html(html)
         })
     </script>
 </body>
